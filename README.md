@@ -30,10 +30,12 @@ default built-in Go logger.
 package main
 
 import (
+    "os"
+
     "github.com/dekarrin/jellog"
 )
 
-main() {
+func main() {
     jellog.Printf("The program has started")
 
     f, err := os.Open("somefile.txt")
@@ -44,21 +46,36 @@ main() {
 
     jellog.Printf("The program is done!")
 }
+
 ```
 
-Or, if you need custom logging with source component information, create a
-Logger and use that.
+Running the above would result in the following being printed to stderr:
+
+```
+2009/11/10 23:00:00 INFO  The program has started
+2009/11/10 23:00:00 FATAL ERROR Can't open somefile.txt: open somefile.txt: no such file or directory
+```
+
+If you need custom logging with source component information, create a Logger
+and use that.
 
 ```golang
 package main
 
 import (
+    "fmt"
+    "io"
+    "os"
+    "http"
+
     "github.com/dekarrin/jellog"
 )
 
-main() {
-    log := jellog.New(&LoggerOptions[string]{
-        Options: Options[string]{
+var log jellog.Logger[string]
+
+func main() {
+    log = jellog.New(&jellog.LoggerOptions[string]{
+        Options: jellog.Options[string]{
             Component: "server",
         },
     })
@@ -82,13 +99,13 @@ main() {
             log.Fatalf("Problem loading config: %w", err)
         }
     }
-    log.Debug("Config load complete...")
+    log.Debug("Config load complete")
 
-    server := CreateHTTPServer(conf)
+    server := createHTTPServer(conf)
     log.Debug("Server created")
 
-    log.Infof("Server is starting...")
-    log.Fatalf(server.ListenAndServe())
+    log.Infof("Server is now listening for new connections")
+    log.Fatalf("%v", server.ListenAndServe())
 }
 
 func loadConfig(filename string) (Config, error) {
@@ -103,7 +120,7 @@ func loadConfig(filename string) (Config, error) {
     log.Tracef("About to start reading config...")
     confData, err := io.ReadAll(f)
     if err != nil {
-        log.Errorf(err)
+        log.Errorf("%v", err)
         return Config{}, err
     }
     log.Tracef("Finished reading config")
@@ -111,10 +128,53 @@ func loadConfig(filename string) (Config, error) {
     log.Tracef("About to start parsing config...")
     conf, err := parseConfig(confData)
     if err != nil {
-        log.Errorf(err)
+        log.Errorf("%v", err)
         return Config{}, err
     }
     log.Tracef("Finished parsing config")
     return conf, nil
 }
+
+func parseConfig(data []byte) (Config, error) {
+    // ...
+    //
+    // do some stuff with config, eventually end up with a:
+
+    return Config{Port: 20, Address: "localhost"}, nil
+}
+
+func createHTTPServer(conf Config) *http.Server {
+    return &http.Server{
+        Addr: fmt.Sprintf("%s:%d", conf.Address, conf.Port),
+    }
+}
+
+type Config struct {
+    defaultConf bool
+    Port int
+    Address string
+}
+```
+
+Assuming all went well, running the above might result in something such as the
+following being printed to stderr:
+
+```
+2009/11/10 23:00:00 INFO  (server) Initialize server...
+2009/11/10 23:00:04 INFO  (server) Server is is now listening for new connections
+```
+
+And even more details would be in server.log:
+
+```
+2009/11/10 23:00:00 INFO  (server) Initialize server...
+2009/11/10 23:00:00 DEBUG (server) Starting config load...
+2009/11/10 23:00:00 TRACE (server) Open file...
+2009/11/10 23:00:01 TRACE (server) About to start reading config...
+2009/11/10 23:00:03 TRACE (server) Finished reading config
+2009/11/10 23:00:03 TRACE (server) About to start parsing config...
+2009/11/10 23:00:03 TRACE (server) Finished parsing config
+2009/11/10 23:00:04 DEBUG (server) Config load complete
+2009/11/10 23:00:04 DEBUG (server) Server created
+2009/11/10 23:00:04 INFO  (server) Server is is now listening for new connections
 ```
