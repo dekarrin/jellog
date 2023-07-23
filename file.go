@@ -40,6 +40,9 @@ func OpenFile(filename string, opts *Options[string]) (*FileHandler, error) {
 	return logger, nil
 }
 
+// InsertBreak writes an explicit break between log entries to the file that fh
+// was opened on. The break used depends on the Formatter fh is configured with;
+// for the default Formatter, it is the newline '\n'.
 func (fh *FileHandler) InsertBreak() error {
 	var buf []byte
 	if fh.opts.Formatter != nil {
@@ -56,10 +59,20 @@ func (fh *FileHandler) InsertBreak() error {
 	return err
 }
 
+// Options returns the Options that the FileHandler is configured with.
+// Modifying the returned struct has no effect on fh.
 func (fh *FileHandler) Options() Options[string] {
 	return fh.opts
 }
 
+// Output writes a log event to the file that fh was opened on. The written
+// message is created by passing the event to the Formatter that fh is
+// configured with; the default Formatter uses a similar line format as the
+// standard Go log library.
+//
+// The calldepth argument is used for recovering the program counter. It should
+// be supplied with the number of levels into the jellog package that the caller
+// has reached, with the externally called function counting as 1.
 func (fh *FileHandler) Output(calldepth int, evt Event[string]) error {
 	if fh.f == nil {
 		return fmt.Errorf("Output() called on FileHandler created without OpenFile")

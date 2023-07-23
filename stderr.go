@@ -32,6 +32,9 @@ func NewStderrHandler(opts *Options[string]) *StderrHandler {
 	return logger
 }
 
+// InsertBreak writes an explicit break between log entries to stderr. The break
+// used depends on the Formatter seh is configured with; for the default
+// Formatter, it is the newline '\n'.
 func (seh *StderrHandler) InsertBreak() error {
 	var buf []byte
 	if seh.opts.Formatter != nil {
@@ -47,10 +50,19 @@ func (seh *StderrHandler) InsertBreak() error {
 	return err
 }
 
+// Options returns the Options that the StderrHandler is configured with.
+// Modifying the returned struct has no effect on seh.
 func (seh *StderrHandler) Options() Options[string] {
 	return seh.opts
 }
 
+// Output writes a log event to stderr. The written message is created by
+// passing the event to the Formatter that seh is configured with; the default
+// Formatter uses a similar line format as the standard Go log library.
+//
+// The calldepth argument is used for recovering the program counter. It should
+// be supplied with the number of levels into the jellog package that the caller
+// has reached, with the externally called function counting as 1.
 func (seh *StderrHandler) Output(calldepth int, evt Event[string]) error {
 	// chain our component with the event's component if we have one
 	if seh.opts.Component != "" {

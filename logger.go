@@ -62,12 +62,12 @@ func (lg *Logger[E]) AddHandler(lv Level, out Handler[E]) {
 	(*lg.mtx).Lock()
 	defer (*lg.mtx).Unlock()
 
-	currentList, ok := lg.h[lv.Priority()]
+	currentList, ok := lg.h[lv.Severity()]
 	if !ok {
 		currentList = make([]Handler[E], 0)
 	}
 	currentList = append(currentList, out)
-	lg.h[lv.Priority()] = currentList
+	lg.h[lv.Severity()] = currentList
 }
 
 // InsertBreak adds a 'break' to all applicable handlers. The meaning of a break
@@ -215,7 +215,7 @@ func (lg Logger[E]) outputsForLevel(lv Level) []Handler[E] {
 	// this could be more efficient if instead of a map we used a priority-based
 	// system. then again, not shore there will rly be THAT many outputs
 	for minLevel := range lg.h {
-		if minLevel <= lv.Priority() {
+		if minLevel <= lv.Severity() {
 			outputs = append(outputs, lg.h[minLevel]...)
 		}
 	}

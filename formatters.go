@@ -9,10 +9,11 @@ import (
 // Formatter converts Events into a series of formatted bytes ready for writing
 // to a final destination.
 type Formatter[E any] interface {
+	// Format converts a log event into formated bytes ready for writing.
 	Format(evt Event[E]) []byte
 
-	// Break creates a break sequence that unambiguously identifies a break in
-	// a record.
+	// Break returns a break sequence that unambiguously separates two log
+	// entries formatted by this Formatter.
 	Break() []byte
 }
 
@@ -30,6 +31,8 @@ type LineFormat struct {
 	ShowMircoseconds bool
 }
 
+// Format formats a log event as a line ending witih '\n' that has time, level,
+// and other information at the start of the line.
 func (lf LineFormat) Format(evt Event[string]) []byte {
 	msg := evt.Message
 
@@ -48,6 +51,7 @@ func (lf LineFormat) Format(evt Event[string]) []byte {
 	return []byte(formatted)
 }
 
+// Break returns the newline character '\n'.
 func (lf LineFormat) Break() []byte {
 	return []byte{'\n'}
 }

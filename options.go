@@ -1,7 +1,7 @@
 package jellog
 
-// Options is used to control the behavior of loggers. It is generally passed to
-// New* or Open* functions as an optional argument.
+// Options is used to control the behavior of Handlers. It is generally passed
+// to constructor functions as an optional argument.
 type Options[E any] struct {
 	// If set, Component is printed before the message but after the level.
 	Component string
@@ -13,6 +13,7 @@ type Options[E any] struct {
 
 // LoggerOptions is all options accepted by creation of a Logger.
 type LoggerOptions[E any] struct {
+	// Options is the generic Handler options.
 	Options[E]
 
 	// Converter takes a value and converts it into an object of the type

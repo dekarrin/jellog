@@ -93,12 +93,15 @@ type Handler[E any] interface {
 //
 // Using the unmodified default standard log, this will insert a newline with no
 // checks to see if it is necessary.
+//
+// To request all Handlers configured in the default logger to insert a break,
+// use LvAll as the level.
 func InsertBreak(lv Level) error {
 	return std.InsertBreak(lv)
 }
 
-// Print logs a message using the default logger at level LvInfo. Arguments are
-// handled in the manner of fmt.Print.
+// Print logs a message using the default logger at severity level INFO.
+// Arguments are handled in the manner of fmt.Print.
 //
 // This function is included for compatibility with the built-in log package.
 func Print(v ...any) {
@@ -106,7 +109,7 @@ func Print(v ...any) {
 	std.Output(2, evt)
 }
 
-// Printf logs a message using the default logger at level LvInfo. It is
+// Printf logs a message using the default logger at severity level INFO. It is
 // equivalent to Infof(). Arguments are handled in the manner of fmt.Printf.
 //
 // This function is included for compatibility with the built-in log package.
@@ -115,8 +118,8 @@ func Printf(format string, v ...any) {
 	std.Output(2, evt)
 }
 
-// Println logs a message using the default logger at level LvInfo. Arguments
-// are handled in the manner of fmt.Printf.
+// Println logs a message using the default logger at severity level INFO.
+// Arguments are handled in the manner of fmt.Printf.
 //
 // This function is included for compatibility with the built-in log package.
 func Println(v ...any) {
@@ -124,8 +127,8 @@ func Println(v ...any) {
 	std.Output(2, evt)
 }
 
-// Fatal logs a message using the default logger at level LvFatal and then
-// immediately calls os.Exit(1). Arguments are handled in the manner of
+// Fatal logs a message using the default logger at severity level FATAL and
+// then immediately calls os.Exit(1). Arguments are handled in the manner of
 // fmt.Print.
 //
 // This function is included for compatibility with the built-in log package.
@@ -135,8 +138,8 @@ func Fatal(v ...any) {
 	os.Exit(1)
 }
 
-// Fatalf logs a message using the default logger at level LvFatal and then
-// immediately calls os.Exit(1). Arguments are handled in the manner of
+// Fatalf logs a message using the default logger at severity level FATAL and
+// then immediately calls os.Exit(1). Arguments are handled in the manner of
 // fmt.Printf.
 //
 // This function is included for compatibility with the built-in log package.
@@ -146,8 +149,8 @@ func Fatalf(format string, v ...any) {
 	os.Exit(1)
 }
 
-// Fatalln logs a message using the default logger at level LvFatal and then
-// immediately calls os.Exit(1). Arguments are handled in the manner of
+// Fatalln logs a message using the default logger at severity level FATAL and
+// then immediately calls os.Exit(1). Arguments are handled in the manner of
 // fmt.Println.
 //
 // This function is included for compatibility with the built-in log package.
@@ -157,8 +160,8 @@ func Fatalln(v ...any) {
 	os.Exit(1)
 }
 
-// Panic logs a message using the default logger at level LvFatal and then
-// immediately calls panic() with the formatted message as its argument.
+// Panic logs a message using the default logger at severity level FATAL and
+// then immediately calls panic() with the formatted message as its argument.
 // Arguments are handled in the manner of fmt.Print.
 //
 // This function is included for compatibility with the built-in log package.
@@ -169,8 +172,8 @@ func Panic(v ...any) {
 	panic(msg)
 }
 
-// Panicf logs a message using the default logger at level LvFatal and then
-// immediately calls panic() with the formatted message as its argument.
+// Panicf logs a message using the default logger at severity level FATAL and
+// then immediately calls panic() with the formatted message as its argument.
 // Arguments are handled in the manner of fmt.Printf.
 //
 // This function is included for compatibility with the built-in log package.
@@ -181,8 +184,8 @@ func Panicf(format string, v ...any) {
 	panic(msg)
 }
 
-// Panicln logs a message using the default logger at level LvFatal and then
-// immediately calls panic() with the formatted message as its argument.
+// Panicln logs a message using the default logger at severity level FATAL and
+// then immediately calls panic() with the formatted message as its argument.
 // Arguments are handled in the manner of fmt.Println.
 //
 // This function is included for compatibility with the built-in log package.
@@ -193,64 +196,79 @@ func Panicln(v ...any) {
 	panic(msg)
 }
 
-// Log logs a message using the default logger at the specified level.
+// Log logs a message using the default logger at the specified severity level.
 func Log(lv Level, msg string) {
 	evt := std.createEvent(lv, msg)
 	std.Output(2, evt)
 }
 
 // Logf logs a formatted message using the default logger at the specified
-// level.
+// severity level.
 func Logf(lv Level, msg string, a ...interface{}) {
 	evt := std.createEvent(lv, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
+// Trace logs a message with severity level TRACE using the default logger.
 func Trace(msg string) {
 	evt := std.createEvent(LvTrace, msg)
 	std.Output(2, evt)
 }
 
+// Tracef logs a formatted message with severity level TRACE using the default
+// logger.
 func Tracef(msg string, a ...interface{}) {
 	evt := std.createEvent(LvTrace, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
+// Debug logs a message with severity level DEBUG using the default logger.
 func Debug(msg string) {
 	evt := std.createEvent(LvDebug, msg)
 	std.Output(2, evt)
 }
 
+// Debugf logs a formatted message with severity level DEBUG using the default
+// logger.
 func Debugf(msg string, a ...interface{}) {
 	evt := std.createEvent(LvDebug, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
+// Info logs a message with severity level INFO using the default logger.
 func Info(msg string) {
 	evt := std.createEvent(LvInfo, msg)
 	std.Output(2, evt)
 }
 
+// Infof logs a formatted message with severity level INFO using the default
+// logger.
 func Infof(msg string, a ...interface{}) {
 	evt := std.createEvent(LvInfo, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
+// Warn logs a message with severity level WARN using the default logger.
 func Warn(msg string) {
 	evt := std.createEvent(LvWarn, msg)
 	std.Output(2, evt)
 }
 
+// Warnf logs a formatted message with severity level WARN using the default
+// logger.
 func Warnf(msg string, a ...interface{}) {
 	evt := std.createEvent(LvWarn, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
+// Error logs a message with severity level ERROR using the default logger.
 func Error(msg string) {
 	evt := std.createEvent(LvError, msg)
 	std.Output(2, evt)
 }
 
+// Errorf logs a formatted message with severity level ERROR using the default
+// logger.
 func Errorf(msg string, a ...interface{}) {
 	evt := std.createEvent(LvError, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
