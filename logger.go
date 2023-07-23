@@ -63,16 +63,25 @@ func New[E any](opts *LoggerOptions[E]) Logger[E] {
 
 // AddHandler adds the given Handler to the Logger and configures it to receive
 // log messages that are level lv and higher.
+//
+// If LvAll or a Level that returns the same value for its Severity() method as
+// LvAll does is used as the level, then the handler will be configured to
+// receive all severities of errors.
 func (lg *Logger[E]) AddHandler(lv Level, out Handler[E]) {
 	(*lg.mtx).Lock()
 	defer (*lg.mtx).Unlock()
 
-	currentList, ok := lg.h[lv.Severity()]
+	sev := lv.Severity()
+	if lv.Severity() == LvAll.Severity() {
+		sev = minPossibleSeverity()
+	}
+
+	currentList, ok := lg.h[sev]
 	if !ok {
 		currentList = make([]Handler[E], 0)
 	}
 	currentList = append(currentList, out)
-	lg.h[lv.Severity()] = currentList
+	lg.h[sev] = currentList
 }
 
 // InsertBreak adds a 'break' to all applicable handlers. The meaning of a break

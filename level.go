@@ -78,6 +78,9 @@ const (
 	// [InsertBreak] to indicate that a message should apply to all handlers
 	// configured for the associated Logger under all circumstances.
 	//
+	// LvAll will be contextually interpreted as "all levels" wherever it is
+	// used.
+	//
 	// LvAll will appear in log output as "ALL".
 	LvAll BuiltInLevel = math.MaxInt
 )
@@ -109,4 +112,8 @@ func (lv BuiltInLevel) Name() string {
 // Severity returns the severity of the BuiltInLevel.
 func (lv BuiltInLevel) Severity() int {
 	return int(lv)
+}
+
+func minPossibleSeverity() int {
+	return math.MinInt
 }
