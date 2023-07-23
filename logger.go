@@ -7,9 +7,14 @@ import (
 	"time"
 )
 
-// Logger routes log messages to one or more Outputs depending on the level they
-// accept. A log message is sent to all Outputs which are configured to use the
-// level that the message is.
+// Logger holds one or more Handlers and routes log messages to them. During a
+// call to log a message via one of the Logger's logging methods, a message is
+// converted to a log Event with an associated severity level, and then is
+// dispatched to all Handlers configured to accept that level of severity or
+// lower.
+//
+// A Logger serializes access to sensitive fields and is safe for concurrent use
+// from multiple goroutines.
 //
 // The zero-value is not ready for use and should not be used directly. Use New
 // to create one.
@@ -56,7 +61,7 @@ func New[E any](opts *LoggerOptions[E]) Logger[E] {
 	}
 }
 
-// AddHandler adds the given Handler to the logger and configures it to receive
+// AddHandler adds the given Handler to the Logger and configures it to receive
 // log messages that are level lv and higher.
 func (lg *Logger[E]) AddHandler(lv Level, out Handler[E]) {
 	(*lg.mtx).Lock()
@@ -74,7 +79,7 @@ func (lg *Logger[E]) AddHandler(lv Level, out Handler[E]) {
 // varies based on the underlying log; for text-based logs, it is generally a
 // newline character.
 func (lg *Logger[E]) InsertBreak(lv Level) error {
-	dispatch := lg.outputsForLevel(lv)
+	dispatch := lg.HandlersForLevel(lv)
 
 	var fullErr error
 	for i := range dispatch {
@@ -96,8 +101,12 @@ func (lg Logger[E]) Options() Options[E] {
 	return lg.opts.Options
 }
 
-// TODO: no good way to capture result of error with general use. Might want to
-// update logging funcs to return an error.
+// Output dispatches a log event to the Handlers in lg that are configured to
+// revceive events of that level or lower.
+//
+// The calldepth argument is used for recovering the program counter. It should
+// be supplied with the number of levels into the jellog package that the caller
+// has reached, with the externally called function counting as 1.
 func (lg Logger[E]) Output(calldepth int, evt Event[E]) error {
 	// chain our component with the event's component if we have one
 	if lg.opts.Component != "" {
@@ -107,7 +116,7 @@ func (lg Logger[E]) Output(calldepth int, evt Event[E]) error {
 		evt.Component += lg.opts.Component
 	}
 
-	dispatch := lg.outputsForLevel(evt.Level)
+	dispatch := lg.HandlersForLevel(evt.Level)
 
 	var fullErr error
 	for i := range dispatch {
@@ -124,89 +133,172 @@ func (lg Logger[E]) Output(calldepth int, evt Event[E]) error {
 	return fullErr
 }
 
-// Log takes a loggable object and routes it to all handlers configured for the
-// given level or lower. Supplementary information is gathered along with msg
-// into an Event which is then passed to the appropriate Handlers.
+// Log logs a message at the given severity level. Supplementary information is
+// gathered along with msg into an Event which is then passed to the appropriate
+// Handlers.
 //
 // If msg is of type E, then it is used directly. If it is not, it is converted
 // to the proper type by using the Logger's Converter function.
 func (lg Logger[E]) Log(lv Level, msg any) {
-	evt := lg.createEvent(lv, msg)
+	evt := lg.CreateEvent(lv, msg)
 	lg.Output(2, evt)
 }
 
-// Logf takes a format string and a series of argfmt.Sprintln(v...)uments and converts them to a
-// loggable object which is then dispatched to its handlers as is appropriate.
-// The resulting formatted string is converted to the loggable object by passing
-// it to the Logger's Converter function.
+// Logf logs a formatted message at the given severity level. Supplementary
+// information is gathered along with msg into an Event which is then passed to
+// the appropriate Handlers.
+//
+// The message is created as a formatted string, and is then converted to the
+// type of logged object handled by the Logger by using the Logger's Converter
+// function.
 func (lg Logger[E]) Logf(lv Level, msg string, a ...interface{}) {
-	evt := lg.createEvent(lv, fmt.Sprintf(msg, a...))
+	evt := lg.CreateEvent(lv, fmt.Sprintf(msg, a...))
 	lg.Output(2, evt)
 }
 
+// Trace logs a message at severity level TRACE. Supplementary information is
+// gathered along with msg into an Event which is then passed to the appropriate
+// Handlers.
+//
+// If msg is of type E, then it is used directly. If it is not, it is converted
+// to the proper type by using the Logger's Converter function.
 func (lg Logger[E]) Trace(msg E) {
-	evt := lg.createEvent(LvTrace, msg)
+	evt := lg.CreateEvent(LvTrace, msg)
 	lg.Output(2, evt)
 }
 
+// Tracef logs a formatted message at severity level TRACE. Supplementary
+// information is gathered along with msg into an Event which is then passed to
+// the appropriate Handlers.
+//
+// The message is created as a formatted string, and is then converted to the
+// type of logged object handled by the Logger by using the Logger's Converter
+// function.
 func (lg Logger[E]) Tracef(msg string, a ...interface{}) {
-	evt := lg.createEvent(LvTrace, fmt.Sprintf(msg, a...))
+	evt := lg.CreateEvent(LvTrace, fmt.Sprintf(msg, a...))
 	lg.Output(2, evt)
 }
 
+// Debug logs a message at severity level DEBUG. Supplementary information is
+// gathered along with msg into an Event which is then passed to the appropriate
+// Handlers.
+//
+// If msg is of type E, then it is used directly. If it is not, it is converted
+// to the proper type by using the Logger's Converter function.
 func (lg Logger[E]) Debug(msg E) {
-	evt := lg.createEvent(LvDebug, msg)
+	evt := lg.CreateEvent(LvDebug, msg)
 	lg.Output(2, evt)
 }
 
+// Debugf logs a formatted message at severity level DEBUG. Supplementary
+// information is gathered along with msg into an Event which is then passed to
+// the appropriate Handlers.
+//
+// The message is created as a formatted string, and is then converted to the
+// type of logged object handled by the Logger by using the Logger's Converter
+// function.
 func (lg Logger[E]) Debugf(msg string, a ...interface{}) {
-	evt := lg.createEvent(LvDebug, fmt.Sprintf(msg, a...))
+	evt := lg.CreateEvent(LvDebug, fmt.Sprintf(msg, a...))
 	lg.Output(2, evt)
 }
 
+// Info logs a message at severity level INFO. Supplementary information is
+// gathered along with msg into an Event which is then passed to the appropriate
+// Handlers.
+//
+// If msg is of type E, then it is used directly. If it is not, it is converted
+// to the proper type by using the Logger's Converter function.
 func (lg Logger[E]) Info(msg E) {
-	evt := lg.createEvent(LvInfo, msg)
+	evt := lg.CreateEvent(LvInfo, msg)
 	lg.Output(2, evt)
 }
 
+// Infof logs a formatted message at severity level INFO. Supplementary
+// information is gathered along with msg into an Event which is then passed to
+// the appropriate Handlers.
+//
+// The message is created as a formatted string, and is then converted to the
+// type of logged object handled by the Logger by using the Logger's Converter
+// function.
 func (lg Logger[E]) Infof(msg string, a ...interface{}) {
-	evt := lg.createEvent(LvInfo, fmt.Sprintf(msg, a...))
+	evt := lg.CreateEvent(LvInfo, fmt.Sprintf(msg, a...))
 	lg.Output(2, evt)
 }
 
+// Warn logs a message at severity level WARN. Supplementary information is
+// gathered along with msg into an Event which is then passed to the appropriate
+// Handlers.
+//
+// If msg is of type E, then it is used directly. If it is not, it is converted
+// to the proper type by using the Logger's Converter function.
 func (lg Logger[E]) Warn(msg E) {
-	evt := lg.createEvent(LvWarn, msg)
+	evt := lg.CreateEvent(LvWarn, msg)
 	lg.Output(2, evt)
 }
 
+// Warnf logs a formatted message at severity level WARN. Supplementary
+// information is gathered along with msg into an Event which is then passed to
+// the appropriate Handlers.
+//
+// The message is created as a formatted string, and is then converted to the
+// type of logged object handled by the Logger by using the Logger's Converter
+// function.
 func (lg Logger[E]) Warnf(msg string, a ...interface{}) {
-	evt := lg.createEvent(LvWarn, fmt.Sprintf(msg, a...))
+	evt := lg.CreateEvent(LvWarn, fmt.Sprintf(msg, a...))
 	lg.Output(2, evt)
 }
 
+// Error logs a message at severity level ERROR. Supplementary information is
+// gathered along with msg into an Event which is then passed to the appropriate
+// Handlers.
+//
+// If msg is of type E, then it is used directly. If it is not, it is converted
+// to the proper type by using the Logger's Converter function.
 func (lg Logger[E]) Error(msg E) {
-	evt := lg.createEvent(LvError, msg)
+	evt := lg.CreateEvent(LvError, msg)
 	lg.Output(2, evt)
 }
 
+// Errorf logs a formatted message at severity level ERROR. Supplementary
+// information is gathered along with msg into an Event which is then passed to
+// the appropriate Handlers.
+//
+// The message is created as a formatted string, and is then converted to the
+// type of logged object handled by the Logger by using the Logger's Converter
+// function.
 func (lg Logger[E]) Errorf(msg string, a ...interface{}) {
-	evt := lg.createEvent(LvError, fmt.Sprintf(msg, a...))
+	evt := lg.CreateEvent(LvError, fmt.Sprintf(msg, a...))
 	lg.Output(2, evt)
 }
 
+// Fatal logs a message at severity level FATAL and then exits the program.
+// Supplementary information is gathered along with msg into an Event which is
+// then passed to the appropriate Handlers.
+//
+// If msg is of type E, then it is used directly. If it is not, it is converted
+// to the proper type by using the Logger's Converter function.
 func (lg Logger[E]) Fatal(msg E) {
-	evt := lg.createEvent(LvFatal, msg)
+	evt := lg.CreateEvent(LvFatal, msg)
 	lg.Output(2, evt)
 	os.Exit(1)
 }
 
+// Fatalf logs a formatted message at severity level FATAL and then exits the
+// program. Supplementary information is gathered along with msg into an Event
+// which is then passed to the appropriate Handlers.
+//
+// The message is created as a formatted string, and is then converted to the
+// type of logged object handled by the Logger by using the Logger's Converter
+// function.
 func (lg Logger[E]) Fatalf(msg string, a ...interface{}) {
-	evt := lg.createEvent(LvFatal, fmt.Sprintf(msg, a...))
+	evt := lg.CreateEvent(LvFatal, fmt.Sprintf(msg, a...))
 	lg.Output(2, evt)
 	os.Exit(1)
 }
 
-func (lg Logger[E]) outputsForLevel(lv Level) []Handler[E] {
+// HandlersForLevel returns all Handlers added to the Logger that are configured
+// to be able to receive log events at the given level.
+func (lg Logger[E]) HandlersForLevel(lv Level) []Handler[E] {
 	(*lg.mtx).Lock()
 	defer (*lg.mtx).Unlock()
 
@@ -223,8 +315,14 @@ func (lg Logger[E]) outputsForLevel(lv Level) []Handler[E] {
 	return outputs
 }
 
-// fills in time and msg
-func (lg Logger[E]) createEvent(lv Level, msg any) Event[E] {
+// CreateEvent creates an Event of the appropriate type using msg. The new Event
+// will have the current time, level, component, and any other attributes
+// configured as part of the Logger for Event creation. The msg will be
+// converted to loggable object type E by calling the Logger's Converter
+// function.
+//
+// The returned Event is ready to be passed into an Output() function.
+func (lg Logger[E]) CreateEvent(lv Level, msg any) Event[E] {
 	now := time.Now()
 
 	typedMsg, isEType := msg.(E)

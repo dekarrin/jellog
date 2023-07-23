@@ -105,7 +105,7 @@ func InsertBreak(lv Level) error {
 //
 // This function is included for compatibility with the built-in log package.
 func Print(v ...any) {
-	evt := std.createEvent(LvInfo, fmt.Sprint(v...))
+	evt := std.CreateEvent(LvInfo, fmt.Sprint(v...))
 	std.Output(2, evt)
 }
 
@@ -114,7 +114,7 @@ func Print(v ...any) {
 //
 // This function is included for compatibility with the built-in log package.
 func Printf(format string, v ...any) {
-	evt := std.createEvent(LvInfo, fmt.Sprintf(format, v...))
+	evt := std.CreateEvent(LvInfo, fmt.Sprintf(format, v...))
 	std.Output(2, evt)
 }
 
@@ -123,7 +123,7 @@ func Printf(format string, v ...any) {
 //
 // This function is included for compatibility with the built-in log package.
 func Println(v ...any) {
-	evt := std.createEvent(LvInfo, fmt.Sprintln(v...))
+	evt := std.CreateEvent(LvInfo, fmt.Sprintln(v...))
 	std.Output(2, evt)
 }
 
@@ -133,7 +133,7 @@ func Println(v ...any) {
 //
 // This function is included for compatibility with the built-in log package.
 func Fatal(v ...any) {
-	evt := std.createEvent(LvFatal, fmt.Sprint(v...))
+	evt := std.CreateEvent(LvFatal, fmt.Sprint(v...))
 	std.Output(2, evt)
 	os.Exit(1)
 }
@@ -144,7 +144,7 @@ func Fatal(v ...any) {
 //
 // This function is included for compatibility with the built-in log package.
 func Fatalf(format string, v ...any) {
-	evt := std.createEvent(LvFatal, fmt.Sprintf(format, v...))
+	evt := std.CreateEvent(LvFatal, fmt.Sprintf(format, v...))
 	std.Output(2, evt)
 	os.Exit(1)
 }
@@ -155,7 +155,7 @@ func Fatalf(format string, v ...any) {
 //
 // This function is included for compatibility with the built-in log package.
 func Fatalln(v ...any) {
-	evt := std.createEvent(LvFatal, fmt.Sprintln(v...))
+	evt := std.CreateEvent(LvFatal, fmt.Sprintln(v...))
 	std.Output(2, evt)
 	os.Exit(1)
 }
@@ -167,7 +167,7 @@ func Fatalln(v ...any) {
 // This function is included for compatibility with the built-in log package.
 func Panic(v ...any) {
 	msg := fmt.Sprint(v...)
-	evt := std.createEvent(LvFatal, msg)
+	evt := std.CreateEvent(LvFatal, msg)
 	std.Output(2, evt)
 	panic(msg)
 }
@@ -179,7 +179,7 @@ func Panic(v ...any) {
 // This function is included for compatibility with the built-in log package.
 func Panicf(format string, v ...any) {
 	msg := fmt.Sprintf(format, v...)
-	evt := std.createEvent(LvFatal, msg)
+	evt := std.CreateEvent(LvFatal, msg)
 	std.Output(2, evt)
 	panic(msg)
 }
@@ -191,85 +191,85 @@ func Panicf(format string, v ...any) {
 // This function is included for compatibility with the built-in log package.
 func Panicln(v ...any) {
 	msg := fmt.Sprintln(v...)
-	evt := std.createEvent(LvFatal, msg)
+	evt := std.CreateEvent(LvFatal, msg)
 	std.Output(2, evt)
 	panic(msg)
 }
 
 // Log logs a message using the default logger at the specified severity level.
 func Log(lv Level, msg string) {
-	evt := std.createEvent(lv, msg)
+	evt := std.CreateEvent(lv, msg)
 	std.Output(2, evt)
 }
 
 // Logf logs a formatted message using the default logger at the specified
 // severity level.
 func Logf(lv Level, msg string, a ...interface{}) {
-	evt := std.createEvent(lv, fmt.Sprintf(msg, a...))
+	evt := std.CreateEvent(lv, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
 // Trace logs a message with severity level TRACE using the default logger.
 func Trace(msg string) {
-	evt := std.createEvent(LvTrace, msg)
+	evt := std.CreateEvent(LvTrace, msg)
 	std.Output(2, evt)
 }
 
 // Tracef logs a formatted message with severity level TRACE using the default
 // logger.
 func Tracef(msg string, a ...interface{}) {
-	evt := std.createEvent(LvTrace, fmt.Sprintf(msg, a...))
+	evt := std.CreateEvent(LvTrace, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
 // Debug logs a message with severity level DEBUG using the default logger.
 func Debug(msg string) {
-	evt := std.createEvent(LvDebug, msg)
+	evt := std.CreateEvent(LvDebug, msg)
 	std.Output(2, evt)
 }
 
 // Debugf logs a formatted message with severity level DEBUG using the default
 // logger.
 func Debugf(msg string, a ...interface{}) {
-	evt := std.createEvent(LvDebug, fmt.Sprintf(msg, a...))
+	evt := std.CreateEvent(LvDebug, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
 // Info logs a message with severity level INFO using the default logger.
 func Info(msg string) {
-	evt := std.createEvent(LvInfo, msg)
+	evt := std.CreateEvent(LvInfo, msg)
 	std.Output(2, evt)
 }
 
 // Infof logs a formatted message with severity level INFO using the default
 // logger.
 func Infof(msg string, a ...interface{}) {
-	evt := std.createEvent(LvInfo, fmt.Sprintf(msg, a...))
+	evt := std.CreateEvent(LvInfo, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
 // Warn logs a message with severity level WARN using the default logger.
 func Warn(msg string) {
-	evt := std.createEvent(LvWarn, msg)
+	evt := std.CreateEvent(LvWarn, msg)
 	std.Output(2, evt)
 }
 
 // Warnf logs a formatted message with severity level WARN using the default
 // logger.
 func Warnf(msg string, a ...interface{}) {
-	evt := std.createEvent(LvWarn, fmt.Sprintf(msg, a...))
+	evt := std.CreateEvent(LvWarn, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
 
 // Error logs a message with severity level ERROR using the default logger.
 func Error(msg string) {
-	evt := std.createEvent(LvError, msg)
+	evt := std.CreateEvent(LvError, msg)
 	std.Output(2, evt)
 }
 
 // Errorf logs a formatted message with severity level ERROR using the default
 // logger.
 func Errorf(msg string, a ...interface{}) {
-	evt := std.createEvent(LvError, fmt.Sprintf(msg, a...))
+	evt := std.CreateEvent(LvError, fmt.Sprintf(msg, a...))
 	std.Output(2, evt)
 }
