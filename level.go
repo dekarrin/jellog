@@ -13,13 +13,13 @@ type Level interface {
 type BuiltInLevel int
 
 const (
-	LvAll   BuiltInLevel = math.MinInt
 	LvTrace BuiltInLevel = -200
 	LvDebug BuiltInLevel = -100
 	LvInfo  BuiltInLevel = 0
 	LvWarn  BuiltInLevel = 100
 	LvError BuiltInLevel = 200
 	LvFatal BuiltInLevel = 300
+	LvAll   BuiltInLevel = math.MaxInt
 )
 
 func (lv BuiltInLevel) Name() string {
