@@ -1,6 +1,6 @@
 # Jellog
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/dekarrin/rosed.svg)](https://pkg.go.dev/github.com/dekarrin/rosed)
+[![Go Reference](https://pkg.go.dev/badge/github.com/dekarrin/jellog.svg)](https://pkg.go.dev/github.com/dekarrin/jellog)
 
 Custom and simplish Go logging library that supports logging of different types
 via generics.
