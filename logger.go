@@ -19,7 +19,7 @@ import (
 // The zero-value is not ready for use and should not be used directly. Use New
 // to create one.
 type Logger[E any] struct {
-	opts LoggerOptions[E]
+	opts Options[E]
 
 	useMtxForLogging bool
 
@@ -27,38 +27,41 @@ type Logger[E any] struct {
 	h   map[int][]Handler[E]
 }
 
-// New creates a new Logger with the given optional Options. If opt is nil, the
-// default options are used. If a component is given, it will prepend any
-// components that outputs have.
-func New[E any](opts *LoggerOptions[E]) Logger[E] {
-	if opts == nil {
-		opts = &LoggerOptions[E]{}
-	}
-
-	usedOpts := *opts
-
-	if usedOpts.Converter == nil {
+// New creates a new Logger with the given Options. For the standard default
+// options, call Defaults().
+func New[E any](opts Options[E]) Logger[E] {
+	if opts.Converter == nil {
 		// iff E is string, then the default converter is fmt.Sprintf("%v", v)
 		var empty E
 		if _, isString := any(empty).(string); isString {
-			usedOpts.Converter = func(v any) E {
+			opts.Converter = func(v any) E {
 				return any(fmt.Sprintf("%v", v)).(E)
 			}
 		} else {
-			usedOpts.Converter = func(v any) E {
+			opts.Converter = func(v any) E {
 				var empty E
 				return empty
 			}
 		}
 	}
 
-	return Logger[E]{
+	logger := Logger[E]{
 		h:    make(map[int][]Handler[E]),
-		opts: usedOpts,
+		opts: opts,
 		mtx:  new(sync.Mutex),
 
 		useMtxForLogging: true,
 	}
+
+	if len(opts.Handlers) > 0 {
+		for lv := range opts.Handlers {
+			for _, h := range opts.Handlers[lv] {
+				logger.AddHandler(lv, h)
+			}
+		}
+	}
+
+	return logger
 }
 
 // AddHandler adds the given Handler to the Logger and configures it to receive
@@ -71,8 +74,8 @@ func (lg *Logger[E]) AddHandler(lv Level, out Handler[E]) {
 	(*lg.mtx).Lock()
 	defer (*lg.mtx).Unlock()
 
-	sev := lv.Severity()
-	if lv.Severity() == LvAll.Severity() {
+	sev := lv.Severity
+	if lv.Severity == LvAll.Severity {
 		sev = minPossibleSeverity()
 	}
 
@@ -105,9 +108,10 @@ func (lg *Logger[E]) InsertBreak(lv Level) error {
 	return fullErr
 }
 
-// Options returns the options that the logger was configured with.
-func (lg Logger[E]) Options() Options[E] {
-	return lg.opts.Options
+// Options returns the Options part of the LoggerOptions that the logger was
+// configured with.
+func (lg Logger[E]) Options() HandlerOptions[E] {
+	return lg.opts.HandlerOptions
 }
 
 // Output dispatches a log event to the Handlers in lg that are configured to
@@ -316,7 +320,7 @@ func (lg Logger[E]) HandlersForLevel(lv Level) []Handler[E] {
 	// this could be more efficient if instead of a map we used a priority-based
 	// system. then again, not shore there will rly be THAT many outputs
 	for minLevel := range lg.h {
-		if minLevel <= lv.Severity() {
+		if minLevel <= lv.Severity {
 			outputs = append(outputs, lg.h[minLevel]...)
 		}
 	}

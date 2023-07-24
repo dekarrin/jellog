@@ -15,16 +15,18 @@ import (
 // would thus be handled in an operating system-dependant way. If this is to be
 // avoided, users must ensure that only one FileHandler is opened per file.
 type FileHandler struct {
-	opts Options[string]
+	opts HandlerOptions[string]
 	f    *os.File
 	mtx  sync.Mutex
 }
 
 // OpenFile gets a File-based logger ready for logging. If the file already
 // exists, it is appeneded to instead of truncated.
-func OpenFile(filename string, opts *Options[string]) (*FileHandler, error) {
+//
+// To use the default set of HandlerOptions, pass nil for opts.
+func OpenFile(filename string, opts *HandlerOptions[string]) (*FileHandler, error) {
 	if opts == nil {
-		opts = &Options[string]{}
+		opts = &HandlerOptions[string]{}
 	}
 
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
@@ -38,6 +40,15 @@ func OpenFile(filename string, opts *Options[string]) (*FileHandler, error) {
 	}
 
 	return logger, nil
+}
+
+// MustOpenFile is the same as OpenFile but panics if an error would occur.
+func MustOpenFile(filename string, opts *HandlerOptions[string]) *FileHandler {
+	fh, err := OpenFile(filename, opts)
+	if err != nil {
+		panic(err)
+	}
+	return fh
 }
 
 // InsertBreak writes an explicit break between log entries to the file that fh
@@ -61,7 +72,7 @@ func (fh *FileHandler) InsertBreak() error {
 
 // Options returns the Options that the FileHandler is configured with.
 // Modifying the returned struct has no effect on fh.
-func (fh *FileHandler) Options() Options[string] {
+func (fh *FileHandler) Options() HandlerOptions[string] {
 	return fh.opts
 }
 

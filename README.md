@@ -74,21 +74,17 @@ import (
 var log jellog.Logger[string]
 
 func main() {
-    log = jellog.New(&jellog.LoggerOptions[string]{
-        Options: jellog.Options[string]{
-            Component: "server",
-        },
-    })
-
-    stderrHandler := jellog.NewStderrHandler(nil)
-    fileHandler, err := jellog.OpenFile("server.log", nil)
-    if err != nil {
-        jellog.Fatalf("could not open log file server.log: %v", err)
-    }
-
-    log.AddHandler(jellog.LvInfo, stderrHandler) // only show INFO-level or higher in stderr
-    log.AddHandler(jellog.LvAll, fileHandler)    // show all levels in the file output
-
+    log = jellog.New(jellog.Defaults[string]().
+        WithComponent("server").
+        WithHandler(
+            // only show INFO-level or higher in stderr
+            jellog.LvInfo, jellog.NewStderrHandler(nil),
+        ).
+        WithHandler(
+            // show all levels in the file output
+            jellog.LvAll, jellog.MustOpenFile("server.log", nil),
+        ))
+    
     // and then start using it!
     log.Info("Initialize server...")
 

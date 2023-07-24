@@ -43,9 +43,9 @@ func (lf LineFormat) Format(evt Event[string]) []byte {
 
 	var formatted string
 	if evt.Component != "" {
-		formatted = fmt.Sprintf("%[1]s %-5[2]s (%[4]s) %[3]s", timeStr, evt.Level.Name(), msg, evt.Component)
+		formatted = fmt.Sprintf("%[1]s %-5[2]s (%[4]s) %[3]s", timeStr, evt.Level.Name, msg, evt.Component)
 	} else {
-		formatted = fmt.Sprintf("%[1]s %-5[2]s %[3]s", timeStr, evt.Level.Name(), msg)
+		formatted = fmt.Sprintf("%[1]s %-5[2]s %[3]s", timeStr, evt.Level.Name, msg)
 	}
 
 	return []byte(formatted)

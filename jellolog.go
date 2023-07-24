@@ -35,7 +35,7 @@ import (
 )
 
 var (
-	std          = New[string](nil)
+	std          = New(Defaults[string]())
 	defFormatter = LineFormat{}
 )
 
@@ -64,7 +64,7 @@ type Event[E any] struct {
 type Handler[E any] interface {
 	// Options returns the options used to create the Handler. Mutating the
 	// returned Options struct has no effect on the handler.
-	Options() Options[E]
+	Options() HandlerOptions[E]
 
 	// Output writes the log event out to the Handler's destination. It is
 	// formatted using the configured Formatter before being sent out. This is

@@ -16,13 +16,15 @@ var mtxStderr sync.Mutex
 // StderrHandler instances. It is safe to use any number of StderrHandlers
 // simultaneously from any number of goroutines.
 type StderrHandler struct {
-	opts Options[string]
+	opts HandlerOptions[string]
 }
 
 // NewStderr gets a logger ready for logging to stderr.
-func NewStderrHandler(opts *Options[string]) *StderrHandler {
+//
+// To use the default set of HandlerOptions, pass nil for opts.
+func NewStderrHandler(opts *HandlerOptions[string]) *StderrHandler {
 	if opts == nil {
-		opts = &Options[string]{}
+		opts = &HandlerOptions[string]{}
 	}
 
 	logger := &StderrHandler{
@@ -52,7 +54,7 @@ func (seh *StderrHandler) InsertBreak() error {
 
 // Options returns the Options that the StderrHandler is configured with.
 // Modifying the returned struct has no effect on seh.
-func (seh *StderrHandler) Options() Options[string] {
+func (seh *StderrHandler) Options() HandlerOptions[string] {
 	return seh.opts
 }
 
