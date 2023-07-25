@@ -64,6 +64,117 @@ func New[E any](opts Options[E]) Logger[E] {
 	return logger
 }
 
+type handLv[E any] struct {
+	h  Handler[E]
+	lv int
+}
+
+// Copy creates a new Logger identical to this one, including the same handlers,
+// but set up as though it were configured with the given Options object. The
+// Options() method can be used to get the current Options for modification if
+// only some properties are to be altered.
+//
+// Handlers in the new Logger are added using both the existing Logger's
+// handlers and te supplied Options object. All Handlers that are configured in
+// the current Logger but are not in the Options.Handlers object will be added
+// to the new Logger unchanged. Any Handler in the Options object that is not in
+// the original Logger at all will be added to the new one as configured.
+// Finally, any Handler that is in the original Logger but is also included in
+// the Options object will be configured in the new Logger at the level given by
+// the Options object. Handlers are checked against each other via pointer
+// comparison.
+func (lg Logger[E]) Copy(opts Options[E]) Logger[E] {
+	// we already HAVE creation based on an options object; our reel task is to
+	// create the 'merged' options
+
+	var merged Options[E]
+
+	// HandlerOptions part first
+	merged.Component = opts.Component
+	if merged.Component == "" {
+		merged.Component = lg.opts.Component
+	}
+
+	merged.Formatter = opts.Formatter
+	if merged.Formatter == nil {
+		merged.Formatter = lg.opts.Formatter
+	}
+
+	// logger-specific options part
+	merged.Converter = opts.Converter
+	if merged.Converter == nil {
+		merged.Converter = lg.opts.Converter
+	}
+
+	// tricky part - handlers
+
+	// first get all current handlers (protected)
+	(*lg.mtx).Lock()
+	current := []handLv[E]{}
+	for lv, hSlice := range lg.h {
+		for _, h := range hSlice {
+			current = append(current, handLv[E]{h: h, lv: lv})
+		}
+	}
+	(*lg.mtx).Unlock()
+
+	// now get all "added" handlers
+	optAdded := []Handler[E]{}
+	for _, hSlice := range opts.Handlers {
+		optAdded = append(optAdded, hSlice...)
+	}
+
+	mergedHandlers := make(map[Level][]Handler[E])
+
+	// now go through and add all current that are not modified by the options
+	for _, entry := range current {
+		// is the entry in the list of handlers being added?
+		var addedByOpt bool
+		for _, add := range optAdded {
+			if entry.h == add {
+				addedByOpt = true
+				break
+			}
+		}
+
+		if !addedByOpt {
+			lv := Level{Severity: entry.lv}
+			if entry.lv == minPossibleSeverity() {
+				lv = LvAll
+			} else if entry.lv == LvFatal.Severity {
+				lv = LvFatal
+			} else if entry.lv == LvError.Severity {
+				lv = LvError
+			} else if entry.lv == LvWarn.Severity {
+				lv = LvWarn
+			} else if entry.lv == LvInfo.Severity {
+				lv = LvInfo
+			} else if entry.lv == LvDebug.Severity {
+				lv = LvDebug
+			} else if entry.lv == LvTrace.Severity {
+				lv = LvTrace
+			}
+
+			curSlice := mergedHandlers[lv]
+			curSlice = append(curSlice, entry.h)
+			mergedHandlers[lv] = curSlice
+		}
+	}
+
+	// now add any NEW entries from opts
+	for lv, hSlice := range opts.Handlers {
+		mergedSlice := mergedHandlers[lv]
+		mergedSlice = append(mergedSlice, hSlice...)
+		mergedHandlers[lv] = mergedSlice
+	}
+
+	if len(mergedHandlers) > 0 {
+		merged.Handlers = mergedHandlers
+	}
+
+	return New(merged)
+}
+
 // AddHandler adds the given Handler to the Logger and configures it to receive
 // log messages that are level lv and higher.
 //
@@ -90,7 +201,7 @@ func (lg *Logger[E]) AddHandler(lv Level, out Handler[E]) {
 // InsertBreak adds a 'break' to all applicable handlers. The meaning of a break
 // varies based on the underlying log; for text-based logs, it is generally a
 // newline character.
-func (lg *Logger[E]) InsertBreak(lv Level) error {
+func (lg Logger[E]) InsertBreak(lv Level) error {
 	dispatch := lg.HandlersForLevel(lv)
 
 	var fullErr error
@@ -108,10 +219,16 @@ func (lg *Logger[E]) InsertBreak(lv Level) error {
 	return fullErr
 }
 
-// Options returns the Options part of the LoggerOptions that the logger was
-// configured with.
-func (lg Logger[E]) Options() HandlerOptions[E] {
+// Options returns the HandlerOptions part of the Options that the logger was
+// configured with. Modifying the returned struct has no effect on the Logger.
+func (lg Logger[E]) HandlerOptions() HandlerOptions[E] {
 	return lg.opts.HandlerOptions
+}
+
+// LoggerOptions returns the entire Options that the logger was configured
+// with. Modifying the returned struct has no effect on the Logger.
+func (lg Logger[E]) Options() Options[E] {
+	return lg.opts
 }
 
 // Output dispatches a log event to the Handlers in lg that are configured to

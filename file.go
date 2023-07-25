@@ -70,9 +70,9 @@ func (fh *FileHandler) InsertBreak() error {
 	return err
 }
 
-// Options returns the Options that the FileHandler is configured with.
+// HandlerOptions returns the options that the FileHandler is configured with.
 // Modifying the returned struct has no effect on fh.
-func (fh *FileHandler) Options() HandlerOptions[string] {
+func (fh *FileHandler) HandlerOptions() HandlerOptions[string] {
 	return fh.opts
 }
 

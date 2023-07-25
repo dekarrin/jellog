@@ -62,9 +62,9 @@ type Event[E any] struct {
 // E is the type of object that users of jellolog pass to a Logger's functions
 // for recording; this will generally be a string, but not always.
 type Handler[E any] interface {
-	// Options returns the options used to create the Handler. Mutating the
-	// returned Options struct has no effect on the handler.
-	Options() HandlerOptions[E]
+	// HandlerOptions returns the options used to create the Handler. Mutating
+	// the returned struct has no effect on the handler.
+	HandlerOptions() HandlerOptions[E]
 
 	// Output writes the log event out to the Handler's destination. It is
 	// formatted using the configured Formatter before being sent out. This is

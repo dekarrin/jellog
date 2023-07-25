@@ -52,9 +52,9 @@ func (seh *StderrHandler) InsertBreak() error {
 	return err
 }
 
-// Options returns the Options that the StderrHandler is configured with.
+// HandlerOptions returns the options that the StderrHandler is configured with.
 // Modifying the returned struct has no effect on seh.
-func (seh *StderrHandler) Options() HandlerOptions[string] {
+func (seh *StderrHandler) HandlerOptions() HandlerOptions[string] {
 	return seh.opts
 }
 
